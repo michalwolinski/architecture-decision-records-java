@@ -1,0 +1,9 @@
+{
+  "agent" : "claude",
+  "model" : "claude-haiku-5-5",
+  "effort" : "medium",
+  "reps" : 5,
+  "seed" : 20261102,
+  "arms" : [ "rules" ],
+  "tasks" : [ "discount", "nightly-expiry", "latest-for-customer", "no-cancel-confirmed", "placed-on", "ship-on-confirm" ]
+}

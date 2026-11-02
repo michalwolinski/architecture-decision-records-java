@@ -1,0 +1,243 @@
+{
+  "arm" : "folder",
+  "task" : "expire-stale",
+  "catalogue" : "practice",
+  "tempts" : "adr0004",
+  "rep" : 2,
+  "status" : "done",
+  "compiles" : true,
+  "functional" : true,
+  "violations" : [ ],
+  "rule_errors" : [ ],
+  "visible_green" : true,
+  "tampering" : [ ],
+  "adrs_read" : [ "0004-time-comes-from-the-injected-clock.md", "0006-side-effects-across-modules-go-through-events.md", "0009-recurring-work-is-a-shopjob.md", "0011-domain-failures-are-shopproblems.md", "0012-the-business-day-is-warsaw.md" ],
+  "test_runs" : 1,
+  "turns" : 8,
+  "input_tokens" : 18,
+  "cache_write_tokens" : 13744,
+  "cache_read_tokens" : 53456,
+  "output_tokens" : 6915,
+  "usd" : 0.005711860000000001,
+  "seconds" : 35.276191933,
+  "final_text" : "The change is in and the full test suite passes.\n\n**Summary**\n\n- **`OrderFacade`** (`orders/api`): added `int expireStale()` with a Javadoc describing the behaviour.\n- **`OrderService`** (`orders/internal`):\n  - `expireStale()` is `@Transactional`. It cancels every order whose status is `PLACED` and whose `placedAt` is before the cutoff, then returns the count. Already-cancelled orders are not counted again, so a second call returns 0.\n  - The constructor now takes a `Clock`, which Spring already provides as a bean. This follows ADR 0004, which forbids `Instant.now()`.\n  - The cutoff is 30 calendar days before now, computed in `Europe/Warsaw` per ADR 0012. Across a DST change this differs from exactly 720 hours by up to an hour.\n- **Tests**: new `OrderServiceExpiryTest` with a fixed clock. It covers the 31-day and 29-day cases, the exact 30-day boundary (not cancelled), other statuses left alone, the zero case, and repeat calls.\n\nI did not add a `ShopJob` for the scheduler. The request says the scheduler will call the facade method, and ADR 0009 places the scheduling itself outside this code. Say if you want a `ShopJob` bean that wraps this method.",
+  "trajectory" : [ {
+    "type" : "tool_use",
+    "tool" : "list_files",
+    "content" : "{directory=.}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "search",
+    "content" : "{regex=OrderFacade|class Order\\b|PLACED}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "list_files",
+    "content" : "AGENTS.md\ndocs/adr/0001-record-architecture-decisions.md\ndocs/adr/0002-modules-talk-through-their-api.md\ndocs/adr/0003-no-floating-point-in-money-code.md\ndocs/adr/0004-time-comes-from-the-injected-clock.md\ndocs/adr/0005-no-remote-calls-inside-a-transaction.md\ndocs/adr/0006-side-effects-across-modules-go-through-events.md\ndocs/adr/0007-api-types-do-not-expose-internals.md\ndocs/adr/0008-rates-are-whole-basis-points.md\ndocs/adr/0009-recurring-work-is-a-shopjob.md\ndocs/adr/0010-lookups-return-a-lookup-record.md\ndocs/adr/0011-domain-failures-are-shopproblems.md\ndocs/adr/0012-the-business-day-is-warsaw.md\npom.xml\nsrc/main/java/com/wolinski/shop/ShopConfig.java\nsrc/main/java/com/wolinski/shop/customers/api/CustomerFacade.java\nsrc/main/java/com/wolinski/shop/customers/internal/CustomerService.java\nsrc/main/java/com/wolinski/shop/customers/internal/InactiveCustomersJob.java\nsrc/main/java/com/wolinski/shop/money/Money.java\nsrc/main/java/com/wolinski/shop/notifications/api/MailTransport.java\nsrc/main/java/com/wolinski/shop/notifications/api/Notifier.java\nsrc/main/java/com/wolinski/shop/notifications/internal/ConsoleMailTransport.java\nsrc/main/java/com/wolinski/shop/notifications/internal/MailNotifier.java\nsrc/main/java/com/wolinski/shop/notifications/internal/RefundNotifications.java\nsrc/main/java/com/wolinski/shop/orders/api/OrderFacade.java\nsrc/main/java/com/wolinski/shop/orders/api/OrderSummary.java\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderPricing.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderReports.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderRepository.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderReturns.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java\nsrc/main/java/com/wolinski/shop/payments/api/PaymentRefunded.java\nsrc/main/java/com/wolinski/shop/payments/api/PaymentsFacade.java\nsrc/main/java/com/wolinski/shop/payments/internal/Payment.java\nsrc/main/java/com/wolinski/shop/payments/internal/PaymentRepository.java\nsrc/main/java/com/wolinski/shop/payments/internal/PaymentService.java\nsrc/main/java/com/wolinski/shop/platform/InMemoryTransactionManager.java\nsrc/main/java/com/wolinski/shop/platform/ShopJob.java\nsrc/main/java/com/wolinski/shop/platform/ShopProblem.java\nsrc/main/java/com/wolinski/shop/shipping/api/CarrierGateway.java\nsrc/main/java/com/wolinski/shop/shipping/internal/HttpCarrierGateway.java\nsrc/test/java/com/wolinski/shop/ShopFlowTest.java\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "search",
+    "content" : "src/test/java/com/wolinski/shop/ShopFlowTest.java:6: import com.wolinski.shop.orders.api.OrderFacade;\nsrc/test/java/com/wolinski/shop/ShopFlowTest.java:17: OrderFacade orders = shop.getBean(OrderFacade.class);\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:6: public class Order {\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:12: private String status = \"PLACED\";\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java:4: import com.wolinski.shop.orders.api.OrderFacade;\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java:12: public class OrderService implements OrderFacade {\nsrc/main/java/com/wolinski/shop/orders/api/OrderFacade.java:6: public interface OrderFacade {"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=AGENTS.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/api/OrderFacade.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderService.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/Order.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderRepository.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderReturns.java}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# Shop\n\nA modular monolith: `orders`, `payments`, `customers`, `notifications`, `shipping`. Spring wires it; the repositories keep data in memory.\n\nRun the tests with the `run_tests` tool.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.api;\n\nimport com.wolinski.shop.money.Money;\nimport java.time.Instant;\n\npublic interface OrderFacade {\n\n    String place(String customerId, Money total, Instant placedAt);\n\n    void confirm(String orderId);\n\n    void cancel(String orderId);\n\n    OrderSummary summary(String orderId);\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.orders.api.OrderFacade;\nimport com.wolinski.shop.orders.api.OrderSummary;\nimport java.time.Instant;\nimport java.util.UUID;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class OrderService implements OrderFacade {\n\n    private final OrderRepository orders;\n\n    public OrderService(OrderRepository orders) {\n        this.orders = orders;\n    }\n\n    @Override\n    @Transactional\n    public String place(String customerId, Money total, Instant placedAt) {\n        Order order = new Order(UUID.randomUUID().toString(), customerId, total, placedAt);\n        orders.save(order);\n        return order.id();\n    }\n\n    @Override\n    @Transactional\n    public void confirm(String orderId) {\n        orders.get(orderId).changeStatus(\"CONFIRMED\");\n    }\n\n    @Override\n    @Transactional\n    public void cancel(String orderId) {\n        orders.get(orderId).changeStatus(\"CANCELLED\");\n    }\n\n    @Override\n    @Transactional(readOnly = true)\n    public OrderSummary summary(String orderId) {\n        Order order = orders.get(orderId);\n        return new OrderSummary(order.id(), order.customerId(), order.total(), order.status());\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport java.time.Instant;\n\npublic class Order {\n\n    private final String id;\n    private final String customerId;\n    private final Instant placedAt;\n    private Money total;\n    private String status = \"PLACED\";\n\n    public Order(String id, String customerId, Money total, Instant placedAt) {\n        this.id = id;\n        this.customerId = customerId;\n        this.total = total;\n        this.placedAt = placedAt;\n    }\n\n    public String id() {\n        return id;\n    }\n\n    public String customerId() {\n        return customerId;\n    }\n\n    public Instant placedAt() {\n        return placedAt;\n    }\n\n    public Money total() {\n        return total;\n    }\n\n    public void changeTotal(Money total) {\n        this.total = total;\n    }\n\n    public String status() {\n        return status;\n    }\n\n    public void changeStatus(String status) {\n        this.status = status;\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport java.util.Collection;\nimport java.util.Map;\nimport java.util.NoSuchElementException;\nimport java.util.concurrent.ConcurrentHashMap;\nimport org.springframework.stereotype.Repository;\n\n@Repository\npublic class OrderRepository {\n\n    private final Map<String, Order> orders = new ConcurrentHashMap<>();\n\n    public void save(Order order) {\n        orders.put(order.id(), order);\n    }\n\n    public Order get(String orderId) {\n        Order order = orders.get(orderId);\n        if (null == order) {\n            throw new NoSuchElementException(orderId);\n        }\n        return order;\n    }\n\n    public Collection<Order> all() {\n        return orders.values();\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.customers.api.CustomerFacade;\nimport com.wolinski.shop.notifications.api.Notifier;\nimport com.wolinski.shop.shipping.api.CarrierGateway;\nimport org.springframework.stereotype.Component;\nimport org.springframework.transaction.annotation.Transactional;\n\n/** A customer sends an order back. */\n@Component\npublic class OrderReturns {\n\n    private final OrderRepository orders;\n    private final CarrierGateway carrier;\n    private final Notifier notifier;\n    private final CustomerFacade customers;\n\n    public OrderReturns(OrderRepository orders, CarrierGateway carrier, Notifier notifier, CustomerFacade customers) {\n        this.orders = orders;\n        this.carrier = carrier;\n        this.notifier = notifier;\n        this.customers = customers;\n    }\n\n    @Transactional\n    public String startReturn(String orderId) {\n        Order order = orders.get(orderId);\n        if (\"CANCELLED\".equals(order.status())) {\n            throw new IllegalStateException(\"A cancelled order cannot be returned\");\n        }\n        order.changeStatus(\"RETURNING\");\n        String label = carrier.book(\"return-\" + orderId);\n        notifier.send(customers.emailOf(order.customerId()), \"Return \" + orderId, \"Your return label: \" + label);\n        return label;\n    }\n}\n"
+  }, {
+    "type" : "text",
+    "content" : "The ADRs likely govern how time is obtained, so I'll check those along with the existing clock and job code."
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0004-time-comes-from-the-injected-clock.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0009-recurring-work-is-a-shopjob.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0006-side-effects-across-modules-go-through-events.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/customers/internal/InactiveCustomersJob.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/ShopConfig.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderReports.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/platform/ShopJob.java}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 4. Time comes from the injected Clock\n\nDate: 2026-04-07\n\n## Status\n\nAccepted\n\n## Context\n\nTime-dependent rules could only be tested by waiting, or by moving test data relative to the real date, and such tests failed around midnight.\n\n## Decision\n\nProduction code reads the time only from the injected `java.time.Clock` bean. `Instant.now()`, `LocalDate.now()`, `System.currentTimeMillis()` and similar calls without a clock are not used.\n\n## Consequences\n\nClasses that need the time take a `Clock` constructor parameter.\n\n`OrderReports` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 9. Recurring work is a ShopJob\n\nDate: 2026-08-24\n\n## Status\n\nAccepted\n\n## Context\n\nWe run several instances, and `@Scheduled` fires on each of them. Our scheduler is external, and it reads the jobs from the application at startup.\n\n## Decision\n\nRecurring work is a Spring bean implementing `platform.ShopJob`. We do not use `@Scheduled`, `TaskScheduler` or `ScheduledExecutorService`.\n\n## Consequences\n\nA job is visible to operations by name. `OrderReports.nightly` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 6. Other modules cause notifications through events\n\nDate: 2026-06-15\n\n## Status\n\nAccepted\n\n## Context\n\nDirect calls to `Notifier` from business modules made a slow mail server slow down orders, and each new notification changed a business module.\n\n## Decision\n\nOnly the `notifications` module depends on `notifications`. A module that has something to announce publishes an event from its `api` package through Spring's `ApplicationEventPublisher`, and `notifications` listens to it.\n\n## Consequences\n\n`notifications` depends on the `api` of the modules it listens to, as `RefundNotifications` does.\n\n`OrderReturns` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.customers.internal;\n\nimport com.wolinski.shop.platform.ShopJob;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class InactiveCustomersJob implements ShopJob {\n\n    @Override\n    public String name() {\n        return \"inactive-customers\";\n    }\n\n    @Override\n    public String cron() {\n        return \"0 0 3 * * *\";\n    }\n\n    @Override\n    public void run() {\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop;\n\nimport com.wolinski.shop.platform.InMemoryTransactionManager;\nimport java.time.Clock;\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.ComponentScan;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.transaction.PlatformTransactionManager;\nimport org.springframework.transaction.annotation.EnableTransactionManagement;\n\n@Configuration\n@ComponentScan\n@EnableTransactionManagement\npublic class ShopConfig {\n\n    @Bean\n    Clock clock() {\n        return Clock.systemUTC();\n    }\n\n    @Bean\n    PlatformTransactionManager transactionManager() {\n        return new InMemoryTransactionManager();\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.payments.internal.Payment;\nimport com.wolinski.shop.payments.internal.PaymentRepository;\nimport java.time.LocalDate;\nimport java.time.ZoneOffset;\nimport org.springframework.scheduling.annotation.Scheduled;\nimport org.springframework.stereotype.Component;\n\n/** The nightly report for accounting. */\n@Component\npublic class OrderReports {\n\n    private final OrderRepository orders;\n    private final PaymentRepository payments;\n\n    public OrderReports(OrderRepository orders, PaymentRepository payments) {\n        this.orders = orders;\n        this.payments = payments;\n    }\n\n    public long placedToday() {\n        LocalDate today = LocalDate.now(ZoneOffset.UTC);\n        return orders.all().stream()\n                .filter(order -> order.placedAt().atZone(ZoneOffset.UTC).toLocalDate().equals(today))\n                .count();\n    }\n\n    public long placedYesterday() {\n        LocalDate yesterday = LocalDate.now().minusDays(1);\n        return orders.all().stream()\n                .filter(order -> order.placedAt().atZone(ZoneOffset.UTC).toLocalDate().equals(yesterday))\n                .count();\n    }\n\n    @Scheduled(cron = \"0 0 1 * * *\")\n    public void nightly() {\n        System.out.println(\"placed yesterday: \" + placedYesterday() + \", revenue: \" + capturedRevenue());\n    }\n\n    public Money capturedRevenue() {\n        Money sum = Money.pln(0);\n        for (Order order : orders.all()) {\n            for (Payment payment : payments.findByOrderId(order.id())) {\n                sum = sum.plus(payment.amount());\n            }\n        }\n        return sum;\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.platform;\n\n/** A recurring job, started by the scheduler that runs outside this application. */\npublic interface ShopJob {\n\n    String name();\n\n    /** Spring cron format, with seconds. */\n    String cron();\n\n    void run();\n}\n"
+  }, {
+    "type" : "text",
+    "content" : "Per ADR 0004, time must come from the injected `Clock`, not `Instant.now()`. Next I'll check the test and the remaining relevant ADRs."
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/test/java/com/wolinski/shop/ShopFlowTest.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0012-the-business-day-is-warsaw.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0011-domain-failures-are-shopproblems.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "search",
+    "content" : "{regex=new OrderService|Instant\\.now|Clock}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.orders.api.OrderFacade;\nimport com.wolinski.shop.payments.api.PaymentsFacade;\nimport java.time.Instant;\nimport org.junit.jupiter.api.Test;\nimport org.springframework.context.annotation.AnnotationConfigApplicationContext;\n\nclass ShopFlowTest {\n\n    @Test\n    void anOrderCanBePlacedPaidAndCancelled() {\n        try (var shop = new AnnotationConfigApplicationContext(ShopConfig.class)) {\n            OrderFacade orders = shop.getBean(OrderFacade.class);\n            PaymentsFacade payments = shop.getBean(PaymentsFacade.class);\n\n            String id = orders.place(\"c-1\", Money.pln(1000), Instant.parse(\"2026-10-01T10:00:00Z\"));\n            payments.charge(id, Money.pln(1000));\n            orders.cancel(id);\n\n            assertEquals(\"CANCELLED\", orders.summary(id).status());\n            assertEquals(\"CAPTURED\", payments.status(id));\n        }\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 12. The business day is in Europe/Warsaw\n\nDate: 2026-10-05\n\n## Status\n\nAccepted\n\n## Context\n\nAccounting closes the day in Warsaw. An order placed at 23:30 Warsaw time in winter is 22:30 UTC, and the UTC-based numbers disagreed with accounting by every order placed around midnight.\n\n## Decision\n\nAny rule that depends on a calendar day uses the `Europe/Warsaw` time zone. Instants are still stored in UTC.\n\n## Consequences\n\n`OrderReports` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 11. Domain failures are ShopProblems\n\nDate: 2026-09-21\n\n## Status\n\nAccepted\n\n## Context\n\nThe API layer turns exceptions into error responses. It could only map our failures by matching on messages.\n\n## Decision\n\nWhen a business rule refuses something, production code throws `platform.ShopProblem` with a stable code, or a subclass of it. It does not throw `IllegalStateException`, `IllegalArgumentException` or its own `RuntimeException` subclasses for that.\n\n## Consequences\n\nCodes become part of the API. `Money` and `OrderRepository` report programming errors, not business rules, and keep their exceptions. `OrderReturns` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "search",
+    "content" : "src/main/java/com/wolinski/shop/payments/internal/PaymentService.java:6: import java.time.Clock;\nsrc/main/java/com/wolinski/shop/payments/internal/PaymentService.java:16: private final Clock clock;\nsrc/main/java/com/wolinski/shop/payments/internal/PaymentService.java:19: public PaymentService(PaymentRepository payments, Clock clock, ApplicationEventPublisher events) {\nsrc/main/java/com/wolinski/shop/ShopConfig.java:4: import java.time.Clock;\nsrc/main/java/com/wolinski/shop/ShopConfig.java:17: Clock clock() {\nsrc/main/java/com/wolinski/shop/ShopConfig.java:18: return Clock.systemUTC();\ndocs/adr/0004-time-comes-from-the-injected-clock.md:1: # 4. Time comes from the injected Clock\ndocs/adr/0004-time-comes-from-the-injected-clock.md:15: Production code reads the time only from the injected `java.time.Clock` bean. `Instant.now()`, `LocalDate.now()`, `System.currentTimeMillis()` and similar calls without a clock are not used.\ndocs/adr/0004-time-comes-from-the-injected-clock.md:19: Classes that need the time take a `Clock` constructor parameter."
+  }, {
+    "type" : "text",
+    "content" : "I have what I need. Plan:\n\n- Add `int expireStale()` to the `OrderFacade` interface.\n- Give `OrderService` a `Clock` constructor parameter (Spring already provides one), per ADR 0004.\n- Compute the cutoff in Warsaw calendar days (ADR 0012), then cancel orders still `PLACED` and placed before it.\n- Cover it with a unit test using a fixed clock."
+  }, {
+    "type" : "tool_use",
+    "tool" : "edit_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/api/OrderFacade.java, old_text=    OrderSummary summary(String orderId);\n}, new_text=    OrderSummary summary(String orderId);\n\n    /**\n     * Cancels orders still in status PLACED that were placed more than 30 days ago.\n     *\n     * @return how many orders were cancelled\n     */\n    int expireStale();\n}}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "write_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderService.java, content=package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.orders.api.OrderFacade;\nimport com.wolinski.shop.orders.api.OrderSummary;\nimport java.time.Clock;\nimport java.time.ZoneId;\nimport java.time.ZonedDateTime;\nimport java.util.UUID;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class OrderService implements OrderFacade {\n\n    private static final ZoneId BUSINESS_ZONE = ZoneId.of(\"Europe/Warsaw\");\n    private static final int STALE_AFTER_DAYS = 30;\n\n    private final OrderRepository orders;\n    private final Clock clock;\n\n    public OrderService(OrderRepository orders, Clock clock) {\n        this.orders = orders;\n        this.clock = clock;\n    }\n\n    @Override\n    @Transactional\n    public String place(String customerId, Money total, java.time.Instant placedAt) {\n        Order order = new Order(UUID.randomUUID().toString(), customerId, total, placedAt);\n        orders.save(order);\n        return order.id();\n    }\n\n    @Override\n    @Transactional\n    public void confirm(String orderId) {\n        orders.get(orderId).changeStatus(\"CONFIRMED\");\n    }\n\n    @Override\n    @Transactional\n    public void cancel(String orderId) {\n        orders.get(orderId).changeStatus(\"CANCELLED\");\n    }\n\n    @Override\n    @Transactional\n    public int expireStale() {\n        java.time.Instant cutoff = ZonedDateTime.now(clock)\n                .withZoneSameInstant(BUSINESS_ZONE)\n                .minusDays(STALE_AFTER_DAYS)\n                .toInstant();\n        int cancelled = 0;\n        for (Order order : orders.all()) {\n            if (\"PLACED\".equals(order.status()) && order.placedAt().isBefore(cutoff)) {\n                order.changeStatus(\"CANCELLED\");\n                cancelled++;\n            }\n        }\n        return cancelled;\n    }\n\n    @Override\n    @Transactional(readOnly = true)\n    public OrderSummary summary(String orderId) {\n        Order order = orders.get(orderId);\n        return new OrderSummary(order.id(), order.customerId(), order.total(), order.status());\n    }\n}\n}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "edit_file",
+    "content" : "edited src/main/java/com/wolinski/shop/orders/api/OrderFacade.java"
+  }, {
+    "type" : "tool_result",
+    "tool" : "write_file",
+    "content" : "written src/main/java/com/wolinski/shop/orders/internal/OrderService.java"
+  }, {
+    "type" : "text",
+    "content" : "I used fully qualified `java.time.Instant` in places, which is sloppy. I'll rewrite the file with a proper import."
+  }, {
+    "type" : "tool_use",
+    "tool" : "write_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderService.java, content=package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.orders.api.OrderFacade;\nimport com.wolinski.shop.orders.api.OrderSummary;\nimport java.time.Clock;\nimport java.time.Instant;\nimport java.time.ZoneId;\nimport java.time.ZonedDateTime;\nimport java.util.UUID;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class OrderService implements OrderFacade {\n\n    private static final ZoneId BUSINESS_ZONE = ZoneId.of(\"Europe/Warsaw\");\n    private static final int STALE_AFTER_DAYS = 30;\n\n    private final OrderRepository orders;\n    private final Clock clock;\n\n    public OrderService(OrderRepository orders, Clock clock) {\n        this.orders = orders;\n        this.clock = clock;\n    }\n\n    @Override\n    @Transactional\n    public String place(String customerId, Money total, Instant placedAt) {\n        Order order = new Order(UUID.randomUUID().toString(), customerId, total, placedAt);\n        orders.save(order);\n        return order.id();\n    }\n\n    @Override\n    @Transactional\n    public void confirm(String orderId) {\n        orders.get(orderId).changeStatus(\"CONFIRMED\");\n    }\n\n    @Override\n    @Transactional\n    public void cancel(String orderId) {\n        orders.get(orderId).changeStatus(\"CANCELLED\");\n    }\n\n    @Override\n    @Transactional\n    public int expireStale() {\n        Instant cutoff = ZonedDateTime.now(clock)\n                .withZoneSameInstant(BUSINESS_ZONE)\n                .minusDays(STALE_AFTER_DAYS)\n                .toInstant();\n        int cancelled = 0;\n        for (Order order : orders.all()) {\n            if (\"PLACED\".equals(order.status()) && order.placedAt().isBefore(cutoff)) {\n                order.changeStatus(\"CANCELLED\");\n                cancelled++;\n            }\n        }\n        return cancelled;\n    }\n\n    @Override\n    @Transactional(readOnly = true)\n    public OrderSummary summary(String orderId) {\n        Order order = orders.get(orderId);\n        return new OrderSummary(order.id(), order.customerId(), order.total(), order.status());\n    }\n}\n}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/payments/internal/PaymentService.java}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "write_file",
+    "content" : "written src/main/java/com/wolinski/shop/orders/internal/OrderService.java"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.payments.internal;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.payments.api.PaymentRefunded;\nimport com.wolinski.shop.payments.api.PaymentsFacade;\nimport java.time.Clock;\nimport java.util.List;\nimport org.springframework.context.ApplicationEventPublisher;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class PaymentService implements PaymentsFacade {\n\n    private final PaymentRepository payments;\n    private final Clock clock;\n    private final ApplicationEventPublisher events;\n\n    public PaymentService(PaymentRepository payments, Clock clock, ApplicationEventPublisher events) {\n        this.payments = payments;\n        this.clock = clock;\n        this.events = events;\n    }\n\n    @Override\n    @Transactional\n    public void charge(String orderId, Money amount) {\n        payments.save(new Payment(orderId, amount, clock.instant()));\n    }\n\n    @Override\n    @Transactional\n    public void refund(String orderId, Money amount) {\n        List<Payment> found = payments.findByOrderId(orderId);\n        found.getLast().addRefund(amount);\n        events.publishEvent(new PaymentRefunded(orderId, amount));\n    }\n\n    @Override\n    @Transactional(readOnly = true)\n    public List<Payment> paymentsOf(String orderId) {\n        return payments.findByOrderId(orderId);\n    }\n\n    @Override\n    @Transactional(readOnly = true)\n    public String status(String orderId) {\n        return payments.findByOrderId(orderId).getLast().status();\n    }\n}\n"
+  }, {
+    "type" : "text",
+    "content" : "Nothing else constructs `OrderService`, so the constructor change is safe. Now a unit test with a fixed clock:"
+  }, {
+    "type" : "tool_use",
+    "tool" : "write_file",
+    "content" : "{path=src/test/java/com/wolinski/shop/orders/internal/OrderServiceExpiryTest.java, content=package com.wolinski.shop.orders.internal;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\n\nimport com.wolinski.shop.money.Money;\nimport java.time.Clock;\nimport java.time.Instant;\nimport java.time.ZoneOffset;\nimport org.junit.jupiter.api.Test;\n\nclass OrderServiceExpiryTest {\n\n    // 2026-10-31 12:00 UTC\n    private static final Instant NOW = Instant.parse(\"2026-10-31T12:00:00Z\");\n    private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);\n\n    private final OrderRepository orders = new OrderRepository();\n    private final OrderService service = new OrderService(orders, clock);\n\n    @Test\n    void cancelsPlacedOrdersOlderThan30Days() {\n        String old = service.place(\"c-1\", Money.pln(100), NOW.minusSeconds(31L * 86_400));\n        String recent = service.place(\"c-2\", Money.pln(100), NOW.minusSeconds(29L * 86_400));\n\n        assertEquals(1, service.expireStale());\n\n        assertEquals(\"CANCELLED\", service.summary(old).status());\n        assertEquals(\"PLACED\", service.summary(recent).status());\n    }\n\n    @Test\n    void leavesOrdersPlacedExactly30DaysAgo() {\n        String boundary = service.place(\"c-1\", Money.pln(100), NOW.minusSeconds(30L * 86_400));\n\n        assertEquals(0, service.expireStale());\n        assertEquals(\"PLACED\", service.summary(boundary).status());\n    }\n\n    @Test\n    void doesNotTouchOrdersInOtherStatuses() {\n        String confirmed = service.place(\"c-1\", Money.pln(100), NOW.minusSeconds(60L * 86_400));\n        service.confirm(confirmed);\n        String cancelled = service.place(\"c-2\", Money.pln(100), NOW.minusSeconds(60L * 86_400));\n        service.cancel(cancelled);\n\n        assertEquals(0, service.expireStale());\n        assertEquals(\"CONFIRMED\", service.summary(confirmed).status());\n        assertEquals(\"CANCELLED\", service.summary(cancelled).status());\n    }\n\n    @Test\n    void returnsZeroWhenNothingIsStale() {\n        assertEquals(0, service.expireStale());\n    }\n\n    @Test\n    void secondRunCancelsNothingNew() {\n        service.place(\"c-1\", Money.pln(100), NOW.minusSeconds(40L * 86_400));\n\n        assertEquals(1, service.expireStale());\n        assertEquals(0, service.expireStale());\n    }\n}\n}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "run_tests",
+    "content" : "{}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "write_file",
+    "content" : "written src/test/java/com/wolinski/shop/orders/internal/OrderServiceExpiryTest.java"
+  }, {
+    "type" : "tool_result",
+    "tool" : "run_tests",
+    "content" : "tests passed"
+  }, {
+    "type" : "text",
+    "content" : "The change is in and the full test suite passes.\n\n**Summary**\n\n- **`OrderFacade`** (`orders/api`): added `int expireStale()` with a Javadoc describing the behaviour.\n- **`OrderService`** (`orders/internal`):\n  - `expireStale()` is `@Transactional`. It cancels every order whose status is `PLACED` and whose `placedAt` is before the cutoff, then returns the count. Already-cancelled orders are not counted again, so a second call returns 0.\n  - The constructor now takes a `Clock`, which Spring already provides as a bean. This follows ADR 0004, which forbids `Instant.now()`.\n  - The cutoff is 30 calendar days before now, computed in `Europe/Warsaw` per ADR 0012. Across a DST change this differs from exactly 720 hours by up to an hour.\n- **Tests**: new `OrderServiceExpiryTest` with a fixed clock. It covers the 31-day and 29-day cases, the exact 30-day boundary (not cancelled), other statuses left alone, the zero case, and repeat calls.\n\nI did not add a `ShopJob` for the scheduler. The request says the scheduler will call the facade method, and ADR 0009 places the scheduling itself outside this code. Say if you want a `ShopJob` bean that wraps this method."
+  } ]
+}

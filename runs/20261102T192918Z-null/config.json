@@ -1,0 +1,9 @@
+{
+  "agent" : "null",
+  "model" : null,
+  "effort" : null,
+  "reps" : 1,
+  "seed" : 20261102,
+  "arms" : [ "none", "enforced" ],
+  "tasks" : [ "discount", "nightly-expiry", "latest-for-customer", "no-cancel-confirmed", "placed-on", "ship-on-confirm", "refund-on-summary", "expire-stale", "cancel-mail", "last-payment", "order-note" ]
+}

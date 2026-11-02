@@ -1,0 +1,9 @@
+{
+  "agent" : "claude",
+  "model" : "claude-haiku-5-5",
+  "effort" : "medium",
+  "reps" : 1,
+  "seed" : 20261102,
+  "arms" : [ "none" ],
+  "tasks" : [ "order-note" ]
+}

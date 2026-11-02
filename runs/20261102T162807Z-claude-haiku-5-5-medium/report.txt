@@ -1,0 +1,11 @@
+arm          n      broke 95% CI         functional   any-viol  tampered  read-adr      usd
+none         1      0/0   0-0%                1/1        0/1       0/1       0/1      0.002
+
+by task: broke its own decision, per arm
+task                      none    folder   pointer  enforced
+refund-on-summary 02       0/0       0/0       0/0       0/0
+discount 03                0/0       0/0       0/0       0/0
+expire-stale 04            0/0       0/0       0/0       0/0
+ship-on-confirm 05         0/0       0/0       0/0       0/0
+cancel-mail 06             0/0       0/0       0/0       0/0
+last-payment 07            0/0       0/0       0/0       0/0

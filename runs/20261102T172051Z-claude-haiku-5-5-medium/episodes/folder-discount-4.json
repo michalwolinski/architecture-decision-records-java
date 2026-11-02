@@ -1,0 +1,229 @@
+{
+  "arm" : "folder",
+  "task" : "discount",
+  "catalogue" : "team",
+  "tempts" : "adr0008",
+  "rep" : 4,
+  "status" : "done",
+  "compiles" : true,
+  "functional" : true,
+  "violations" : [ "adr0011" ],
+  "rule_errors" : [ ],
+  "visible_green" : true,
+  "tampering" : [ ],
+  "adrs_read" : [ "0003-no-floating-point-in-money-code.md", "0007-api-types-do-not-expose-internals.md", "0008-rates-are-whole-basis-points.md", "0010-lookups-return-a-lookup-record.md", "0011-domain-failures-are-shopproblems.md" ],
+  "test_runs" : 1,
+  "turns" : 8,
+  "input_tokens" : 18,
+  "cache_write_tokens" : 13868,
+  "cache_read_tokens" : 63213,
+  "output_tokens" : 7805,
+  "usd" : 0.00626993,
+  "seconds" : 38.598738434,
+  "final_text" : "`OrderFacade` now has `applyDiscount(String orderId, String percent)`, and the test suite passes.\n\n**What changed**\n- **`OrderFacade` / `OrderService`:** the new method loads the order, works out the discount, and sets the total to `total − discount`. It runs in a transaction, like the other write methods.\n- **`DiscountPercent`** (new, `orders.internal`): the arithmetic and parsing.\n  - The text is parsed by hand into whole basis points (12.5 → 1250). No `double` or `BigDecimal`, following ADR 8, which supersedes ADR 3.\n  - The discount is `(total × bps + 5000) / 10000` in `long` arithmetic, so it rounds half up. For example, 0.5% of 1.00 PLN gives 0.01 PLN.\n  - Bad input throws a `ShopProblem` with code `INVALID_DISCOUNT`, per ADR 11. Accepted input is 0 to 100 with at most two decimals, with optional surrounding whitespace.\n- **Tests:** a facade-level test in `ShopFlowTest`, and `DiscountPercentTest` covering parsing, rejected inputs and rounding cases.\n\n**Decisions to check**\n- A comma decimal (\"12,5\") is rejected, not accepted. The example uses a dot. If the admin form sends commas, the parser needs to change.\n- Three decimal places (\"12.345\") are rejected rather than rounded, because ADR 8 says rates with more than two decimals cannot be represented.\n- An unknown order still throws the existing `NoSuchElementException` from the repository.\n- Repeated discounts compound, since each one applies to the current total.\n\nI did not touch `OrderPricing`. It still uses `double`, and the ADRs mark it for migration.",
+  "trajectory" : [ {
+    "type" : "tool_use",
+    "tool" : "list_files",
+    "content" : "{directory=.}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "search",
+    "content" : "{regex=OrderFacade|class Order\\b|total}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "list_files",
+    "content" : "AGENTS.md\ndocs/adr/0001-record-architecture-decisions.md\ndocs/adr/0002-modules-talk-through-their-api.md\ndocs/adr/0003-no-floating-point-in-money-code.md\ndocs/adr/0004-time-comes-from-the-injected-clock.md\ndocs/adr/0005-no-remote-calls-inside-a-transaction.md\ndocs/adr/0006-side-effects-across-modules-go-through-events.md\ndocs/adr/0007-api-types-do-not-expose-internals.md\ndocs/adr/0008-rates-are-whole-basis-points.md\ndocs/adr/0009-recurring-work-is-a-shopjob.md\ndocs/adr/0010-lookups-return-a-lookup-record.md\ndocs/adr/0011-domain-failures-are-shopproblems.md\ndocs/adr/0012-the-business-day-is-warsaw.md\npom.xml\nsrc/main/java/com/wolinski/shop/ShopConfig.java\nsrc/main/java/com/wolinski/shop/customers/api/CustomerFacade.java\nsrc/main/java/com/wolinski/shop/customers/internal/CustomerService.java\nsrc/main/java/com/wolinski/shop/customers/internal/InactiveCustomersJob.java\nsrc/main/java/com/wolinski/shop/money/Money.java\nsrc/main/java/com/wolinski/shop/notifications/api/MailTransport.java\nsrc/main/java/com/wolinski/shop/notifications/api/Notifier.java\nsrc/main/java/com/wolinski/shop/notifications/internal/ConsoleMailTransport.java\nsrc/main/java/com/wolinski/shop/notifications/internal/MailNotifier.java\nsrc/main/java/com/wolinski/shop/notifications/internal/RefundNotifications.java\nsrc/main/java/com/wolinski/shop/orders/api/OrderFacade.java\nsrc/main/java/com/wolinski/shop/orders/api/OrderSummary.java\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderPricing.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderReports.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderRepository.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderReturns.java\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java\nsrc/main/java/com/wolinski/shop/payments/api/PaymentRefunded.java\nsrc/main/java/com/wolinski/shop/payments/api/PaymentsFacade.java\nsrc/main/java/com/wolinski/shop/payments/internal/Payment.java\nsrc/main/java/com/wolinski/shop/payments/internal/PaymentRepository.java\nsrc/main/java/com/wolinski/shop/payments/internal/PaymentService.java\nsrc/main/java/com/wolinski/shop/platform/InMemoryTransactionManager.java\nsrc/main/java/com/wolinski/shop/platform/ShopJob.java\nsrc/main/java/com/wolinski/shop/platform/ShopProblem.java\nsrc/main/java/com/wolinski/shop/shipping/api/CarrierGateway.java\nsrc/main/java/com/wolinski/shop/shipping/internal/HttpCarrierGateway.java\nsrc/test/java/com/wolinski/shop/ShopFlowTest.java\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "search",
+    "content" : "src/test/java/com/wolinski/shop/ShopFlowTest.java:6: import com.wolinski.shop.orders.api.OrderFacade;\nsrc/test/java/com/wolinski/shop/ShopFlowTest.java:17: OrderFacade orders = shop.getBean(OrderFacade.class);\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:6: public class Order {\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:11: private Money total;\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:14: public Order(String id, String customerId, Money total, Instant placedAt) {\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:17: this.total = total;\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:33: public Money total() {\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:34: return total;\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:37: public void changeTotal(Money total) {\nsrc/main/java/com/wolinski/shop/orders/internal/Order.java:38: this.total = total;\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java:4: import com.wolinski.shop.orders.api.OrderFacade;\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java:12: public class OrderService implements OrderFacade {\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java:22: public String place(String customerId, Money total, Instant placedAt) {\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java:23: Order order = new Order(UUID.randomUUID().toString(), customerId, total, placedAt);\nsrc/main/java/com/wolinski/shop/orders/internal/OrderService.java:44: return new OrderSummary(order.id(), order.customerId(), order.total(), order.status());\nsrc/main/java/com/wolinski/shop/orders/api/OrderFacade.java:6: public interface OrderFacade {\nsrc/main/java/com/wolinski/shop/orders/api/OrderFacade.java:8: String place(String customerId, Money total, Instant placedAt);\nsrc/main/java/com/wolinski/shop/orders/api/OrderSummary.java:5: public record OrderSummary(String id, String customerId, Money total, String status) {"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=AGENTS.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/api/OrderFacade.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderService.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderPricing.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/money/Money.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/Order.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0003-no-floating-point-in-money-code.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0008-rates-are-whole-basis-points.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0011-domain-failures-are-shopproblems.md}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# Shop\n\nA modular monolith: `orders`, `payments`, `customers`, `notifications`, `shipping`. Spring wires it; the repositories keep data in memory.\n\nRun the tests with the `run_tests` tool.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.api;\n\nimport com.wolinski.shop.money.Money;\nimport java.time.Instant;\n\npublic interface OrderFacade {\n\n    String place(String customerId, Money total, Instant placedAt);\n\n    void confirm(String orderId);\n\n    void cancel(String orderId);\n\n    OrderSummary summary(String orderId);\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.orders.api.OrderFacade;\nimport com.wolinski.shop.orders.api.OrderSummary;\nimport java.time.Instant;\nimport java.util.UUID;\nimport org.springframework.stereotype.Service;\nimport org.springframework.transaction.annotation.Transactional;\n\n@Service\npublic class OrderService implements OrderFacade {\n\n    private final OrderRepository orders;\n\n    public OrderService(OrderRepository orders) {\n        this.orders = orders;\n    }\n\n    @Override\n    @Transactional\n    public String place(String customerId, Money total, Instant placedAt) {\n        Order order = new Order(UUID.randomUUID().toString(), customerId, total, placedAt);\n        orders.save(order);\n        return order.id();\n    }\n\n    @Override\n    @Transactional\n    public void confirm(String orderId) {\n        orders.get(orderId).changeStatus(\"CONFIRMED\");\n    }\n\n    @Override\n    @Transactional\n    public void cancel(String orderId) {\n        orders.get(orderId).changeStatus(\"CANCELLED\");\n    }\n\n    @Override\n    @Transactional(readOnly = true)\n    public OrderSummary summary(String orderId) {\n        Order order = orders.get(orderId);\n        return new OrderSummary(order.id(), order.customerId(), order.total(), order.status());\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic class OrderPricing {\n\n    private static final double VAT_PERCENT = 23.0;\n\n    public Money withVat(Money net) {\n        double gross = net.minorUnits() * (100 + VAT_PERCENT) / 100;\n        return new Money(Math.round(gross), net.currency());\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.money;\n\npublic record Money(long minorUnits, String currency) {\n\n    public static Money pln(long minorUnits) {\n        return new Money(minorUnits, \"PLN\");\n    }\n\n    public Money plus(Money other) {\n        requireSameCurrency(other);\n        return new Money(minorUnits + other.minorUnits, currency);\n    }\n\n    public Money minus(Money other) {\n        requireSameCurrency(other);\n        return new Money(minorUnits - other.minorUnits, currency);\n    }\n\n    private void requireSameCurrency(Money other) {\n        if (false == currency.equals(other.currency)) {\n            throw new IllegalArgumentException(currency + \" vs \" + other.currency);\n        }\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport java.time.Instant;\n\npublic class Order {\n\n    private final String id;\n    private final String customerId;\n    private final Instant placedAt;\n    private Money total;\n    private String status = \"PLACED\";\n\n    public Order(String id, String customerId, Money total, Instant placedAt) {\n        this.id = id;\n        this.customerId = customerId;\n        this.total = total;\n        this.placedAt = placedAt;\n    }\n\n    public String id() {\n        return id;\n    }\n\n    public String customerId() {\n        return customerId;\n    }\n\n    public Instant placedAt() {\n        return placedAt;\n    }\n\n    public Money total() {\n        return total;\n    }\n\n    public void changeTotal(Money total) {\n        this.total = total;\n    }\n\n    public String status() {\n        return status;\n    }\n\n    public void changeStatus(String status) {\n        this.status = status;\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 3. No floating point in money code\n\nDate: 2026-03-16\n\n## Status\n\nSuperseded by [8](0008-rates-are-whole-basis-points.md)\n\n## Context\n\nAn invoice was off by 0.01 PLN because a percentage went through a `double`.\n\n## Decision\n\nProduction code uses no `double` or `float`: not in fields, signatures or local variables, and it does not parse into them. Amounts are `Money`, in minor units. A fractional rate is calculated with `BigDecimal`, and rounded half up to a minor unit.\n\n## Consequences\n\nPercentages take a little more code.\n\n`OrderPricing` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 8. Rates are whole basis points\n\nDate: 2026-08-10\n\n## Status\n\nAccepted\n\n## Context\n\nADR 3 moved rates to `BigDecimal`. Since then we have had two bugs from it: `equals` treating `1.0` and `1.00` as different, and one `divide` without a rounding mode that threw in production.\n\n## Decision\n\nSupersedes ADR 3. Production code uses neither floating point nor `BigDecimal`. A rate is a whole number of basis points in a `long` (12.5% is 1250), and arithmetic on it is `long` arithmetic. Text input is converted to basis points by hand, and a division rounds half up by adding half of the divisor first.\n\n## Consequences\n\nA rate with more than two decimal places cannot be represented, and that is what we want. `OrderPricing` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 11. Domain failures are ShopProblems\n\nDate: 2026-09-21\n\n## Status\n\nAccepted\n\n## Context\n\nThe API layer turns exceptions into error responses. It could only map our failures by matching on messages.\n\n## Decision\n\nWhen a business rule refuses something, production code throws `platform.ShopProblem` with a stable code, or a subclass of it. It does not throw `IllegalStateException`, `IllegalArgumentException` or its own `RuntimeException` subclasses for that.\n\n## Consequences\n\nCodes become part of the API. `Money` and `OrderRepository` report programming errors, not business rules, and keep their exceptions. `OrderReturns` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/platform/ShopProblem.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderReturns.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderRepository.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=src/test/java/com/wolinski/shop/ShopFlowTest.java}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0010-lookups-return-a-lookup-record.md}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "read_file",
+    "content" : "{path=docs/adr/0007-api-types-do-not-expose-internals.md}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.platform;\n\n/** A domain failure the API layer can show to a person: a stable code, and a message. */\npublic class ShopProblem extends RuntimeException {\n\n    private final String code;\n\n    public ShopProblem(String code, String message) {\n        super(message);\n        this.code = code;\n    }\n\n    public String code() {\n        return code;\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.customers.api.CustomerFacade;\nimport com.wolinski.shop.notifications.api.Notifier;\nimport com.wolinski.shop.shipping.api.CarrierGateway;\nimport org.springframework.stereotype.Component;\nimport org.springframework.transaction.annotation.Transactional;\n\n/** A customer sends an order back. */\n@Component\npublic class OrderReturns {\n\n    private final OrderRepository orders;\n    private final CarrierGateway carrier;\n    private final Notifier notifier;\n    private final CustomerFacade customers;\n\n    public OrderReturns(OrderRepository orders, CarrierGateway carrier, Notifier notifier, CustomerFacade customers) {\n        this.orders = orders;\n        this.carrier = carrier;\n        this.notifier = notifier;\n        this.customers = customers;\n    }\n\n    @Transactional\n    public String startReturn(String orderId) {\n        Order order = orders.get(orderId);\n        if (\"CANCELLED\".equals(order.status())) {\n            throw new IllegalStateException(\"A cancelled order cannot be returned\");\n        }\n        order.changeStatus(\"RETURNING\");\n        String label = carrier.book(\"return-\" + orderId);\n        notifier.send(customers.emailOf(order.customerId()), \"Return \" + orderId, \"Your return label: \" + label);\n        return label;\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop.orders.internal;\n\nimport java.util.Collection;\nimport java.util.Map;\nimport java.util.NoSuchElementException;\nimport java.util.concurrent.ConcurrentHashMap;\nimport org.springframework.stereotype.Repository;\n\n@Repository\npublic class OrderRepository {\n\n    private final Map<String, Order> orders = new ConcurrentHashMap<>();\n\n    public void save(Order order) {\n        orders.put(order.id(), order);\n    }\n\n    public Order get(String orderId) {\n        Order order = orders.get(orderId);\n        if (null == order) {\n            throw new NoSuchElementException(orderId);\n        }\n        return order;\n    }\n\n    public Collection<Order> all() {\n        return orders.values();\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "package com.wolinski.shop;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.orders.api.OrderFacade;\nimport com.wolinski.shop.payments.api.PaymentsFacade;\nimport java.time.Instant;\nimport org.junit.jupiter.api.Test;\nimport org.springframework.context.annotation.AnnotationConfigApplicationContext;\n\nclass ShopFlowTest {\n\n    @Test\n    void anOrderCanBePlacedPaidAndCancelled() {\n        try (var shop = new AnnotationConfigApplicationContext(ShopConfig.class)) {\n            OrderFacade orders = shop.getBean(OrderFacade.class);\n            PaymentsFacade payments = shop.getBean(PaymentsFacade.class);\n\n            String id = orders.place(\"c-1\", Money.pln(1000), Instant.parse(\"2026-10-01T10:00:00Z\"));\n            payments.charge(id, Money.pln(1000));\n            orders.cancel(id);\n\n            assertEquals(\"CANCELLED\", orders.summary(id).status());\n            assertEquals(\"CAPTURED\", payments.status(id));\n        }\n    }\n}\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 10. Lookups return a lookup record\n\nDate: 2026-09-07\n\n## Status\n\nAccepted\n\n## Context\n\nFacades will become network calls (see ADR 2). `Optional` does not serialize usefully, and `null` tells a caller nothing.\n\n## Decision\n\nA facade method that may find nothing returns a record named `<Thing>Lookup` from its `api` package, with `boolean found()` and the value, which is null only when `found()` is false. Facades neither return `null` nor use `Optional`.\n\n## Consequences\n\nCallers write `if (lookup.found())`. Each lookup adds a small record.\n"
+  }, {
+    "type" : "tool_result",
+    "tool" : "read_file",
+    "content" : "# 7. API types do not expose internals\n\nDate: 2026-07-20\n\n## Status\n\nAccepted\n\n## Context\n\nReturning an entity from a facade lets every caller depend on its shape, so renaming a field in `internal` breaks other modules.\n\n## Decision\n\nNothing in an `api` package refers to a type in an `internal` package. A facade returns a record declared in its own `api` package.\n\n## Consequences\n\nThere is a small mapping step between entities and API records.\n\n`PaymentsFacade.paymentsOf` predates this decision and is scheduled for migration. It is not a pattern to follow.\n"
+  }, {
+    "type" : "text",
+    "content" : "I have the picture now. The ADRs matter here: ADR 8 says rates are whole basis points parsed by hand, with no `double` or `BigDecimal`. Business refusals use `ShopProblem`. I'll follow both, and not copy the `double` in `OrderPricing`."
+  }, {
+    "type" : "tool_use",
+    "tool" : "write_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/DiscountPercent.java, content=package com.wolinski.shop.orders.internal;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.platform.ShopProblem;\n\n/** A discount rate typed by an admin, held as whole basis points (12.5% is 1250). */\nfinal class DiscountPercent {\n\n    static final String INVALID = \"INVALID_DISCOUNT\";\n\n    private static final long MAX_BASIS_POINTS = 10_000L;\n\n    private DiscountPercent() {\n    }\n\n    /**\n     * Parses text such as \"12.5\" or \"0.25\" into basis points, accepting 0 to 100 with at most two decimals.\n     */\n    static long toBasisPoints(String text) {\n        if (null == text) {\n            throw invalid(text);\n        }\n        String s = text.trim();\n        int dot = s.indexOf('.');\n        String whole = dot < 0 ? s : s.substring(0, dot);\n        String fraction = dot < 0 ? \"\" : s.substring(dot + 1);\n        if (whole.isEmpty() || whole.length() > 3 || !allDigits(whole)) {\n            throw invalid(text);\n        }\n        if (dot >= 0 && (fraction.isEmpty() || fraction.length() > 2 || !allDigits(fraction))) {\n            throw invalid(text);\n        }\n        long basisPoints = Long.parseLong(whole) * 100L;\n        if (fraction.length() == 1) {\n            basisPoints += Long.parseLong(fraction) * 10L;\n        } else if (fraction.length() == 2) {\n            basisPoints += Long.parseLong(fraction);\n        }\n        if (basisPoints > MAX_BASIS_POINTS) {\n            throw invalid(text);\n        }\n        return basisPoints;\n    }\n\n    /** The discount on a non-negative total, rounded half up to a whole minor unit. */\n    static Money discountOf(Money total, long basisPoints) {\n        if (total.minorUnits() < 0) {\n            throw new IllegalStateException(\"Negative total: \" + total.minorUnits());\n        }\n        long product = Math.multiplyExact(total.minorUnits(), basisPoints);\n        long discount = Math.addExact(product, MAX_BASIS_POINTS / 2) / MAX_BASIS_POINTS;\n        return new Money(discount, total.currency());\n    }\n\n    private static boolean allDigits(String s) {\n        for (int i = 0; i < s.length(); i++) {\n            char c = s.charAt(i);\n            if (c < '0' || c > '9') {\n                return false;\n            }\n        }\n        return true;\n    }\n\n    private static ShopProblem invalid(String text) {\n        return new ShopProblem(INVALID, \"Discount must be a percentage from 0 to 100 with at most two decimals: \" + text);\n    }\n}\n}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "edit_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/api/OrderFacade.java, old_text=    void cancel(String orderId);\n, new_text=    void cancel(String orderId);\n\n    /** Lowers the order's total by a percentage such as \"12.5\", rounded half up to a minor unit. */\n    void applyDiscount(String orderId, String percent);\n}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "edit_file",
+    "content" : "{path=src/main/java/com/wolinski/shop/orders/internal/OrderService.java, old_text=    @Override\n    @Transactional(readOnly = true), new_text=    @Override\n    @Transactional\n    public void applyDiscount(String orderId, String percent) {\n        long basisPoints = DiscountPercent.toBasisPoints(percent);\n        Order order = orders.get(orderId);\n        Money discount = DiscountPercent.discountOf(order.total(), basisPoints);\n        order.changeTotal(order.total().minus(discount));\n    }\n\n    @Override\n    @Transactional(readOnly = true)}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "write_file",
+    "content" : "written src/main/java/com/wolinski/shop/orders/internal/DiscountPercent.java"
+  }, {
+    "type" : "tool_result",
+    "tool" : "edit_file",
+    "content" : "edited src/main/java/com/wolinski/shop/orders/api/OrderFacade.java"
+  }, {
+    "type" : "tool_result",
+    "tool" : "edit_file",
+    "content" : "edited src/main/java/com/wolinski/shop/orders/internal/OrderService.java"
+  }, {
+    "type" : "text",
+    "content" : "Now tests: a flow test through the facade, and unit tests for parsing and rounding."
+  }, {
+    "type" : "tool_use",
+    "tool" : "write_file",
+    "content" : "{path=src/test/java/com/wolinski/shop/orders/internal/DiscountPercentTest.java, content=package com.wolinski.shop.orders.internal;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\nimport static org.junit.jupiter.api.Assertions.assertThrows;\n\nimport com.wolinski.shop.money.Money;\nimport com.wolinski.shop.platform.ShopProblem;\nimport org.junit.jupiter.api.Test;\n\nclass DiscountPercentTest {\n\n    @Test\n    void parsesPercentToBasisPoints() {\n        assertEquals(1250, DiscountPercent.toBasisPoints(\"12.5\"));\n        assertEquals(1200, DiscountPercent.toBasisPoints(\"12\"));\n        assertEquals(25, DiscountPercent.toBasisPoints(\"0.25\"));\n        assertEquals(50, DiscountPercent.toBasisPoints(\" 0.5 \"));\n        assertEquals(10_000, DiscountPercent.toBasisPoints(\"100\"));\n        assertEquals(0, DiscountPercent.toBasisPoints(\"0\"));\n    }\n\n    @Test\n    void rejectsMalformedOrOutOfRangeText() {\n        for (String bad : new String[] {null, \"\", \" \", \"abc\", \"-1\", \"+5\", \"12,5\", \"12.\", \".5\", \"1e2\", \"12.345\", \"100.01\", \"101\", \"1000\"}) {\n            ShopProblem problem = assertThrows(ShopProblem.class, () -> DiscountPercent.toBasisPoints(bad), String.valueOf(bad));\n            assertEquals(DiscountPercent.INVALID, problem.code());\n        }\n    }\n\n    @Test\n    void discountRoundsHalfUp() {\n        assertEquals(Money.pln(1), DiscountPercent.discountOf(Money.pln(100), 50));   // 0.5% of 1.00 PLN\n        assertEquals(Money.pln(2), DiscountPercent.discountOf(Money.pln(300), 75));   // 2.25 -> 2\n        assertEquals(Money.pln(3), DiscountPercent.discountOf(Money.pln(250), 125));  // 3.125 -> 3\n        assertEquals(Money.pln(5), DiscountPercent.discountOf(Money.pln(1000), 50));  // 5.00 exactly\n        assertEquals(Money.pln(0), DiscountPercent.discountOf(Money.pln(99), 50));    // 0.495 -> 0\n        assertEquals(Money.pln(1), DiscountPercent.discountOf(Money.pln(100), 100));  // 0.005 -> 0.01? no: see below\n    }\n}\n}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "write_file",
+    "content" : "written src/test/java/com/wolinski/shop/orders/internal/DiscountPercentTest.java"
+  }, {
+    "type" : "text",
+    "content" : "I left a muddled comment on the last assertion. Fixing it, then adding a facade-level test."
+  }, {
+    "type" : "tool_use",
+    "tool" : "edit_file",
+    "content" : "{path=src/test/java/com/wolinski/shop/orders/internal/DiscountPercentTest.java, old_text=        assertEquals(Money.pln(1), DiscountPercent.discountOf(Money.pln(100), 100));  // 0.005 -> 0.01? no: see below, new_text=        assertEquals(Money.pln(1), DiscountPercent.discountOf(Money.pln(100), 100));  // 1% of 1.00 PLN is 0.01 PLN}"
+  }, {
+    "type" : "tool_use",
+    "tool" : "edit_file",
+    "content" : "{path=src/test/java/com/wolinski/shop/ShopFlowTest.java, old_text=            assertEquals(\"CAPTURED\", payments.status(id));\n        }\n    }, new_text=            assertEquals(\"CAPTURED\", payments.status(id));\n        }\n    }\n\n    @Test\n    void aDiscountLowersTheTotalAndRoundsHalfUp() {\n        try (var shop = new AnnotationConfigApplicationContext(ShopConfig.class)) {\n            OrderFacade orders = shop.getBean(OrderFacade.class);\n\n            String id = orders.place(\"c-1\", Money.pln(100), Instant.parse(\"2026-10-01T10:00:00Z\"));\n            orders.applyDiscount(id, \"0.5\");\n\n            assertEquals(Money.pln(99), orders.summary(id).total());\n        }\n    }}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "edit_file",
+    "content" : "edited src/test/java/com/wolinski/shop/orders/internal/DiscountPercentTest.java"
+  }, {
+    "type" : "tool_result",
+    "tool" : "edit_file",
+    "content" : "edited src/test/java/com/wolinski/shop/ShopFlowTest.java"
+  }, {
+    "type" : "tool_use",
+    "tool" : "run_tests",
+    "content" : "{}"
+  }, {
+    "type" : "tool_result",
+    "tool" : "run_tests",
+    "content" : "tests passed"
+  }, {
+    "type" : "text",
+    "content" : "`OrderFacade` now has `applyDiscount(String orderId, String percent)`, and the test suite passes.\n\n**What changed**\n- **`OrderFacade` / `OrderService`:** the new method loads the order, works out the discount, and sets the total to `total − discount`. It runs in a transaction, like the other write methods.\n- **`DiscountPercent`** (new, `orders.internal`): the arithmetic and parsing.\n  - The text is parsed by hand into whole basis points (12.5 → 1250). No `double` or `BigDecimal`, following ADR 8, which supersedes ADR 3.\n  - The discount is `(total × bps + 5000) / 10000` in `long` arithmetic, so it rounds half up. For example, 0.5% of 1.00 PLN gives 0.01 PLN.\n  - Bad input throws a `ShopProblem` with code `INVALID_DISCOUNT`, per ADR 11. Accepted input is 0 to 100 with at most two decimals, with optional surrounding whitespace.\n- **Tests:** a facade-level test in `ShopFlowTest`, and `DiscountPercentTest` covering parsing, rejected inputs and rounding cases.\n\n**Decisions to check**\n- A comma decimal (\"12,5\") is rejected, not accepted. The example uses a dot. If the admin form sends commas, the parser needs to change.\n- Three decimal places (\"12.345\") are rejected rather than rounded, because ADR 8 says rates with more than two decimals cannot be represented.\n- An unknown order still throws the existing `NoSuchElementException` from the repository.\n- Repeated discounts compound, since each one applies to the current total.\n\nI did not touch `OrderPricing`. It still uses `double`, and the ADRs mark it for migration."
+  } ]
+}

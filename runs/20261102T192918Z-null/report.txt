@@ -1,0 +1,23 @@
+catalogue: team (with the control ticket in n, functional and read-adr)
+arm          n      broke 95% CI         functional   any-viol   flagged  read-adr      usd
+none         7      0/6   0-39%               0/7        0/7       0/7       0/7      0.000
+enforced     7      0/6   0-39%               0/7        0/7       0/7       0/7      0.000
+
+catalogue: practice (with the control ticket in n, functional and read-adr)
+arm          n      broke 95% CI         functional   any-viol   flagged  read-adr      usd
+none         5      0/4   0-49%               0/5        0/5       0/5       0/5      0.000
+enforced     5      0/4   0-49%               0/5        0/5       0/5       0/5      0.000
+
+
+by task: broke its own decision, per arm
+task                      none     rules    folder   pointer  enforced
+discount 08                0/1       0/0       0/0       0/0       0/1
+nightly-expiry 09          0/1       0/0       0/0       0/0       0/1
+latest-for-customer 10       0/1       0/0       0/0       0/0       0/1
+no-cancel-confirmed 11       0/1       0/0       0/0       0/0       0/1
+placed-on 12               0/1       0/0       0/0       0/0       0/1
+ship-on-confirm 05         0/1       0/0       0/0       0/0       0/1
+refund-on-summary 02       0/1       0/0       0/0       0/0       0/1
+expire-stale 04            0/1       0/0       0/0       0/0       0/1
+cancel-mail 06             0/1       0/0       0/0       0/0       0/1
+last-payment 07            0/1       0/0       0/0       0/0       0/1
